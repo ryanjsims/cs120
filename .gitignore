@@ -4,6 +4,8 @@ grader_saves
 OneDrive
 epws
 memory_test.py
+email_short_problems.py
+check_survey.py
 *.tz
 *.7z
 *.zip
