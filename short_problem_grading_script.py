@@ -2,7 +2,7 @@
 Programmer: Ryan Sims
 Email: ryanjsims@email.arizona.edu
 Date: 8/28/2017
-Version: 1.1.1
+Version: 1.2
 Description: A short problem grading script for SLs of Fall '17 CSC120
 Requirements:
     1. Text file listing all of your students' NetIDs and full names,
