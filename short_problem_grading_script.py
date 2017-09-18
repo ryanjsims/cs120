@@ -5,14 +5,16 @@ Date: 8/28/2017
 Version: 1.1.1
 Description: A short problem grading script for SLs of Fall '17 CSC120
 Requirements:
-    1. Text file listing all of your students' NetIDs and full names, one student per line, of the format:
+    1. Text file listing all of your students' NetIDs and full names,
+       one student per line, of the format:
         "<NetID>\t"Lastname, Firstname"
-       This text file needs to be in the same directory as this script, and it must be named
-       "emails_and_names.txt".
-    2. Assignment folders in the same directory, named "Assignment <#>" where <#> is replaced
-       with the assignment number. Each Assignment <#> folder should have a "Short Problems"
-       subdirectory, which contains your students' code folders out of the tar file, the
-       CCscores.csv file, and the rubric provided by Abigail in a "rubric.txt" file.
+       This text file needs to be in the same directory as this script,
+       and it must be named "emails_and_names.txt".
+    2. Assignment folders in the same directory, named "Assignment <#>"
+       where <#> is replaced with the assignment number. Each Assignment <#>
+       folder should have a "Short Problems" subdirectory, which contains
+       your students' code folders out of the tar file, the CCscores.csv file,
+       and the rubric provided by Abigail in a "rubric.txt" file.
     So your setup should look like:
     
     <basedir>/
@@ -39,8 +41,14 @@ Requirements:
 
 import os, re, errno, platform, json, sys, copy
 FOLDSEP = "/"
+SAVECLEAR = "tput smcup"
+CLEAR = "clear"
+RESTORE = "tput rmcup"
 if os.name == "nt":
     FOLDSEP = "\\"
+    SAVECLEAR = "cls"
+    CLEAR = "cls"
+    RESTORE = ""
 
 def main():
     grader = ShortGrader()
@@ -79,6 +87,11 @@ class ShortGrader:
         # problem
         self.prev_problem = []
         
+    """
+    grade()
+    The main function of the program, controls all function calls
+    and return values.
+    """
     def grade(self):
         self.get_assignment()
         if(len(self.finished_students) == 0):
@@ -137,6 +150,9 @@ class ShortGrader:
             print("Unable to find rubric.txt")
             return False
         else:
+            # This regex finds anything of the format "/<#> <valid_python_func_name>"
+            # The first group is the points value, and the second group is the
+            # name of the function
             self.problems = re.findall("\/(\d+)\s+([a-zA-Z0-9_\- #]+)", "".join(self.rubric))
             for i in range(len(self.problems)):
                 if(" " in self.problems[i][1]):
@@ -246,6 +262,14 @@ class ShortGrader:
             for problem in self.problems:
                 self.student_scores[student[2]][problem[1]] =\
                                 float(problem[0]) * float(student[problem_indices[problem[1]]].strip())
+                self.student_scores[student[2]][problem[1]] =\
+                                self._round(self.student_scores[student[2]][problem[1]])
+
+    def _round(self, num):
+        mid = float(int(num)) + 0.5
+        if num < mid:
+            return int(num)
+        return int(num) + 1
                 
             
     """
@@ -288,26 +312,46 @@ class ShortGrader:
             print("\n-------------------------------------------\n")
             self.finished_students.append(netid)
             self.save_data("_assg" + str(self.assignment) + "_autosave")
-                
+
+    """
+    grade_problem(problem, netid, directory)
+    Grades a single problem given by the problem list for name netid
+
+    problem: list of strings consisting of ['<point_val>', '<problem_name>']
+    netid: string containing current netid
+    directory: the directory containing the students' code.
+
+    returns True on successful grade,
+            False if user indicates they need to undo a problem.
+    """            
     def grade_problem(self, problem, netid, directory):
-        self.student_scores[netid][problem[1] + "_backup"] = copy.deepcopy(self.student_scores[netid][problem[1]])
-        solution_code = open(directory + netid + FOLDSEP + problem[1] + ".py").read()
+        self.student_scores[netid][problem[1] + "_backup"] =\
+                            copy.deepcopy(self.student_scores[netid][problem[1]])
+        solution_code = open(directory + netid + FOLDSEP + problem[1] + ".py")
+        solution_code = solution_code.read()
         print()
         print(solution_code)
-        print("Base score: " + str(self.student_scores[netid][problem[1]]) + "/" + problem[0])
+        print("Base score: " + str(self.student_scores[netid][problem[1]])
+                  + "/" + problem[0])
+        
         deduct = self.get_deductions()
+        # get_deductions() returns an int when there is a deduction to be made,
+        # string if the user wants to undo. It's hacky, I know.
         if type(deduct) is int:
             self.student_scores[netid][problem[1]] += deduct
         else:
+            # Just way too messy. This resets the previous problem when
+            # the user indicates they want to undo, and returns False.
             self.student_scores[self.prev_problem[0]]["total"]\
                 = (self.student_scores[self.prev_problem[0]]["total"]
                            - self.student_scores[self.prev_problem[0]][self.prev_problem[1][1]])
             self.student_scores[self.prev_problem[0]][self.prev_problem[1][1]]\
                      = self.student_scores[self.prev_problem[0]][self.prev_problem[1][1] +"_backup"]
             return False
+        # No negative scores allowed
         if(self.student_scores[netid][problem[1]] < 0):
             self.student_scores[netid][problem[1]] = 0
-        self.student_scores[netid]["comments"][problem[1]] = self.get_comments()
+        self.student_scores[netid]["comments"][problem[1]] = self.get_comments(directory)
         self.student_scores[netid]["total"] += self.student_scores[netid][problem[1]]
         self.student_scores[netid]["problems_finished"].append(problem[1])
         self.prev_problem = [netid, problem]
@@ -316,8 +360,11 @@ class ShortGrader:
 
     """
     get_deductions()
-    Prompts the user to input any deductions necessary or if the program should save its state.
-    Returns deductions (int <= 0) or exits depending on user decision.
+    Prompts the user to input any deductions necessary
+    or if the program should save/undo its state.
+    <terrible_hack>
+    Returns deductions (int <= 0), "undo", or exits depending on user decision.
+    </terrible_hack>
     """
     def get_deductions(self):
         while True:
@@ -330,7 +377,7 @@ class ShortGrader:
                 if response.lower().startswith("y"):
                     sys.exit()
             elif response.lower().startswith("u"):
-                return "undo"
+                return "undo" #ew
             else:
                 deduct = 1
                 while deduct > 0:
@@ -345,22 +392,53 @@ class ShortGrader:
     """
     get_comments()
     Prompts the user to input any comments they may have.
+    User may choose from previous comments on each assignment.
     Returns a string of comments.
     """
-    def get_comments(self):
-        while True:
-            response = input("Any comments? (y/N) ")
-            if not response or response.lower().startswith("n"):
-                return ""
-            else:
-                print("Enter as many lines as you would like. End with a blank line.")
-                comment = ""
-                while True:
-                    line = input()
-                    if line:
-                        comment += line + "\n"
-                    else:
-                        return comment
+    def get_comments(self, directory):
+        regex = "<comment \d+>\s([\w\W]+?)</comment \d+>"
+        ret = ""
+        fav_list = ["Don't forget comments!"]
+        if(not os.path.isfile(directory + "prev_comments.txt")):
+            favorites = open(directory + "prev_comments.txt", "w")
+        else:
+            favorites = open(directory + "prev_comments.txt", "r+")
+        if favorites.readable():
+            fav_text = favorites.read()
+            for comment in re.findall(regex, fav_text):
+                fav_list.append(comment.strip())
+        
+        response = input("Any comments? You can choose from previous comments with 'f' (y/N/f) ")
+        if not response or response.lower().startswith("n"):
+            pass
+        elif response.lower().startswith("f"):
+            os.system(SAVECLEAR)
+            for i in range(len(fav_list)):
+                print("{:d}:".format(i))
+                for line in fav_list[i].split("\n"):
+                    if line != '':
+                        print("\t" + line)
+            choice = ""
+            while type(choice) != int:
+                try:
+                    choice = int(input("Choose a comment. (0 - {:d}): ".format(len(fav_list) - 1)))
+                except ValueError:
+                    pass
+            ret = fav_list[choice]            
+            os.system(RESTORE)            
+        else:
+            print("Enter as many lines as you would like. End with a blank line.")
+            while True:
+                line = input()
+                if line:
+                    ret += line + "\n"
+                else:
+                    if ret != "":
+                        favorites.write("<comment {:d}>\n".format(len(fav_list))
+                                        + ret
+                                        + "</comment {:d}>\n".format(len(fav_list)))
+                    break
+        return ret
 
     """
     write_emails()
@@ -409,7 +487,6 @@ class ShortGrader:
                         match[0] = match[0].replace(" ", "").replace("#", "")
                         for problem in self.problems:
                             if(problem[1] in match):
-                                #print("Fix email writer!")
                                 line = line.strip().split()
                                 email_file.write(str(data[problem[1]]) + line[0] + "\t\t" + line[1] + "\n")
                     else:
