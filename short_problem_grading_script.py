@@ -413,6 +413,7 @@ class ShortGrader:
             pass
         elif response.lower().startswith("f"):
             os.system(SAVECLEAR)
+            print("-1:\n\tNew...")
             for i in range(len(fav_list)):
                 print("{:d}:".format(i))
                 for line in fav_list[i].split("\n"):
@@ -424,21 +425,31 @@ class ShortGrader:
                     choice = int(input("Choose a comment. (0 - {:d}): ".format(len(fav_list) - 1)))
                 except ValueError:
                     pass
-            ret = fav_list[choice]            
+            if choice >= 0:
+                ret = fav_list[choice]
+            else:
+                ret = self.get_lines()
+                self.write_comment_to_file(ret, favorites, len(fav_list))
             os.system(RESTORE)            
         else:
             print("Enter as many lines as you would like. End with a blank line.")
-            while True:
-                line = input()
-                if line:
-                    ret += line + "\n"
-                else:
-                    if ret != "":
-                        favorites.write("<comment {:d}>\n".format(len(fav_list))
-                                        + ret
-                                        + "</comment {:d}>\n".format(len(fav_list)))
-                    break
+            ret = self.get_lines()
+            self.write_comment_to_file(ret, favorites, len(fav_list))
         return ret
+
+    def get_lines(self):
+        ret = ""
+        while True:
+            line = input()
+            if line:
+                ret += line + "\n"
+            else:
+                return ret
+    
+    def write_comment_to_file(self, comment, file, num):
+        if comment != ""
+            file.write("<comment {:d}>\n".format(num)
+                        + comment + "</comment {:d}>\n".format(num))
 
     """
     write_emails()
@@ -451,7 +462,9 @@ class ShortGrader:
     def write_emails(self):
         email_path = os.getcwd() + FOLDSEP + "Assignment " + str(self.assignment)\
                      + FOLDSEP + "Short Problems" + FOLDSEP + "_emails"
-        print("Grading completed. Writing email files to " + email_path)
+        rel_path = "." + FOLDSEP + "Assignment " + str(self.assignment)\
+                     + FOLDSEP + "Short Problems" + FOLDSEP + "_emails"
+        print("Grading completed. Writing email files to " + rel_path)
         print("Saved state to ./grader_saves/assignment" + str(self.assignment) + "preemail.gsv")
         self.save_data("assignment" + str(self.assignment) + "preemail")
         self.make_sure_path_exists(email_path)
@@ -583,7 +596,9 @@ class ShortGrader:
     def write_csv(self):
         csv_path = os.getcwd() + FOLDSEP + "Assignment " + str(self.assignment)\
                    + FOLDSEP + "Short Problems" + FOLDSEP + "adjusted_scores.csv"
-        print("Writing CSV to " + csv_path)
+        rel_path = "." + FOLDSEP + "Assignment " + str(self.assignment)\
+                   + FOLDSEP + "Short Problems" + FOLDSEP + "adjusted_scores.csv"
+        print("Writing CSV to " + rel_path)
         csv_list = [["Last Name", "First Name", "NetID", "Total"]]
         csv_list_sort = []
         for netid in self.student_scores.keys():
