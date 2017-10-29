@@ -328,9 +328,8 @@ class ShortGrader:
         self.student_scores[netid][problem[1] + "_backup"] =\
                             copy.deepcopy(self.student_scores[netid][problem[1]])
         solution_code = open(directory + netid + FOLDSEP + problem[1] + ".py")
-        solution_code = solution_code.read()
         print()
-        print(solution_code)
+        self.print_code(solution_code)
         print("Base score: " + str(self.student_scores[netid][problem[1]])
                   + "/" + problem[0])
         
@@ -357,7 +356,20 @@ class ShortGrader:
         self.prev_problem = [netid, problem]
         return True
 
-
+    def print_code(self, code_file):
+        solution_code = code_file.readlines()
+        nl_flag = 0
+        for line in solution_code:
+            if '"""DO NOT MODIFY ANYTHING BELOW THIS LINE"""' in line:
+                break
+            if len(line.strip()) == 0:
+                print(["\n", ""][nl_flag], end='')
+                nl_flag = 1
+                continue
+            nl_flag = 0
+            print(line, end='')
+        if nl_flag == 0:
+            print()
     """
     get_deductions()
     Prompts the user to input any deductions necessary
@@ -413,24 +425,27 @@ class ShortGrader:
             pass
         elif response.lower().startswith("f"):
             os.system(SAVECLEAR)
-            print("-1:\n\tNew...")
+            print("{:2d}:\n\tNew...".format(0))
             for i in range(len(fav_list)):
-                print("{:d}:".format(i))
+                print("{:2d}:".format(i + 1))
                 for line in fav_list[i].split("\n"):
                     if line != '':
                         print("\t" + line)
             choice = ""
             while type(choice) != int:
                 try:
-                    choice = int(input("Choose a comment. (0 - {:d}): ".format(len(fav_list) - 1)))
+                    choice = int(input("Choose a comment. (0 - {:d}): ".format(len(fav_list))))
                 except ValueError:
                     pass
+            choice -= 1
             if choice >= 0:
                 ret = fav_list[choice]
             else:
+                print("Enter as many lines as you would like. End with a blank line.")
                 ret = self.get_lines()
                 self.write_comment_to_file(ret, favorites, len(fav_list))
-            os.system(RESTORE)            
+            os.system(RESTORE)
+            print(ret)
         else:
             print("Enter as many lines as you would like. End with a blank line.")
             ret = self.get_lines()
@@ -447,7 +462,7 @@ class ShortGrader:
                 return ret
     
     def write_comment_to_file(self, comment, file, num):
-        if comment != ""
+        if comment != "":
             file.write("<comment {:d}>\n".format(num)
                         + comment + "</comment {:d}>\n".format(num))
 
