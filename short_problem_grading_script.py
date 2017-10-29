@@ -2,7 +2,9 @@
 Programmer: Ryan Sims
 Email: ryanjsims@email.arizona.edu
 Date: 8/28/2017
-Version: 1.2
+"""
+VERSION = 1.3
+"""
 Description: A short problem grading script for SLs of Fall '17 CSC120
 Requirements:
     1. Text file listing all of your students' NetIDs and full names,
@@ -14,7 +16,8 @@ Requirements:
        where <#> is replaced with the assignment number. Each Assignment <#>
        folder should have a "Short Problems" subdirectory, which contains
        your students' code folders out of the tar file, the CCscores.csv file,
-       and the rubric provided by Abigail in a "rubric.txt" file.
+       the rubric provided by Abigail in a "rubric.txt" file, and an optional
+       "constraints.txt" file to exclude lines you do not want printed.
     So your setup should look like:
     
     <basedir>/
@@ -26,6 +29,7 @@ Requirements:
                     code.py
                 CCscores#######.csv
                 rubric.txt
+                constraints.txt (optional)
         Assignment 2/
             Short Problems/
                 ryanjsims/
@@ -86,6 +90,8 @@ class ShortGrader:
         # prev_problem is to allow the user to undo any mistakes they made in the previous
         # problem
         self.prev_problem = []
+        # constraints is a list of lines that should not be output when reading the code.
+        self.constraints = []
         
     """
     grade()
@@ -95,6 +101,10 @@ class ShortGrader:
     def grade(self):
         self.get_assignment()
         if(len(self.finished_students) == 0):
+            """
+            We have not loaded anything, so we need to initialize
+            everything.
+            """
             if(not self.parse_rubric()):
                 return
             if(not self.get_emails_and_names()):
@@ -102,12 +112,14 @@ class ShortGrader:
             csv_name = self.get_csv_name()
             if(not self.parse_csv(csv_name)):
                 return
+            self.get_constraints()
             self.get_base_scores()
         print("\n--------------------------------------------------")
         print("\tType save at any time to save")
         print("\tthe current state of your grading.")
         print("\n\tType undo at the start of a new")
-        print("\tstudent to regrade the previous student")
+        print("\tstudent/problem to regrade the previous")
+        print("\tstudent or previous problem")
         print("--------------------------------------------------\n")
         self.check_code_quality()
         self.write_emails()
@@ -131,6 +143,11 @@ class ShortGrader:
                 print("Please enter a number (1, 2, etc...)")
                 self.assignment = -1
                 continue
+            except AssertionError:
+                """
+                Incompatible save!
+                """
+                sys.exit(1)
         
     """
     parse_rubric()
@@ -239,6 +256,18 @@ class ShortGrader:
             i += 1
         return True                              
 
+    """
+    get_constraints()
+    Checks to see if there is a constraints file present. If there is, it loads
+    the constraints. Else, it does nothing, and self.constraints remains an
+    empty list.
+    """
+    def get_constraints(self):
+        short_prob_path = os.getcwd() + FOLDSEP + "Assignment " +\
+            str(self.assignment) + FOLDSEP + "Short Problems" + FOLDSEP
+        if(os.path.exists(short_prob_path + "constraints.txt")):
+            self.constraints = open(short_prob_path + "constraints.txt").readlines()
+    
     """
     get_base_scores()
     Takes the scores from self.scores_csv and stores them in self.student_scores
@@ -362,6 +391,8 @@ class ShortGrader:
         for line in solution_code:
             if '"""DO NOT MODIFY ANYTHING BELOW THIS LINE"""' in line:
                 break
+            if line in self.constraints:
+                continue
             if len(line.strip()) == 0:
                 print(["\n", ""][nl_flag], end='')
                 nl_flag = 1
@@ -563,6 +594,7 @@ class ShortGrader:
     """
     def save_data(self, save_name=""):
         data = {}
+        data["version"]             = VERSION
         data["sl_name"]             = self.sl_name
         data["rubric"]              = self.rubric
         data["problems"]            = self.problems
@@ -572,6 +604,7 @@ class ShortGrader:
         data["student_scores"]      = self.student_scores
         data["finished_students"]   = self.finished_students
         data["netids_to_names"]     = self.netids_to_names
+        data["constraints"]         = self.constraints
         self.make_sure_path_exists("grader_saves")
         if not save_name:
             save_name = input("Enter a name for the save file. ")
@@ -583,6 +616,7 @@ class ShortGrader:
     load_data()
     Prompts user to select a save file and loads JSON into memory.
     No return value.
+    Throws AssertionError if save is incompatible with current version.
     """
     def load_data(self):
         print("Save files:")
@@ -593,6 +627,11 @@ class ShortGrader:
         loaded_string = load_file.read()
         load_file.close()
         data = json.loads(loaded_string)
+        assert "version" in data.keys(),\
+                "Incompatible save from earlier version (unknown)" 
+        assert VERSION == data["version"],\
+                "Incompatible save from earlier version ({})"\
+                .format(data["version"])
         self.sl_name = data["sl_name"]
         self.rubric = data["rubric"]
         self.problems = data["problems"]
@@ -602,6 +641,7 @@ class ShortGrader:
         self.student_scores = data["student_scores"]
         self.finished_students = data["finished_students"]
         self.netids_to_names = data["netids_to_names"]
+        self.constraints = data["constraints"]
 
     """
     write_csv()
