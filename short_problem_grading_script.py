@@ -3,7 +3,7 @@ Programmer: Ryan Sims
 Email: ryanjsims@email.arizona.edu
 Date: 8/28/2017
 """
-VERSION = 1.3.1
+VERSION = "1.3.1"
 """
 Description: A short problem grading script for SLs of Fall '17 CSC120
 Requirements:
@@ -213,7 +213,7 @@ class ShortGrader:
         csv_dir = os.getcwd() + FOLDSEP + "Assignment " +\
               str(self.assignment) + FOLDSEP + "Short Problems" + FOLDSEP
         print("Looking for csv file in " + csv_dir)
-        matches = re.findall("C*scores[0-9]*\.csv", "\n".join(os.listdir(csv_dir)))
+        matches = re.findall("C*scores[a-zA-Z0-9]*\.csv", "\n".join(os.listdir(csv_dir)))
         csv_name = ""
         if(len(matches) == 0):
             print("CSV scores file of form C*scores[0-9]*\.csv not found.")
@@ -289,8 +289,10 @@ class ShortGrader:
             self.student_scores[student[2]]["last_name"] = student[0]
             self.student_scores[student[2]]["first_name"] = student[1]
             for problem in self.problems:
+                if(student[problem_indices[problem[1]]].strip() == ''):
+                    student[problem_indices[problem[1]]] = "0"
                 self.student_scores[student[2]][problem[1]] =\
-                                float(problem[0]) * float(student[problem_indices[problem[1]]].strip().replace(" ", "0"))
+                                float(problem[0]) * float(student[problem_indices[problem[1]]].strip())
                 self.student_scores[student[2]][problem[1]] =\
                                 self._round(self.student_scores[student[2]][problem[1]])
 
@@ -630,7 +632,7 @@ class ShortGrader:
         assert "version" in data.keys(),\
                 "Incompatible save from earlier version (unknown)" 
         currVersion = VERSION.split(".")
-        oldVersion = data["version"].split(".")
+        oldVersion = str(data["version"]).split(".")
         assert currVersion[0] == oldVersion[0] and currVersion[1] == oldVersion[1],\
                 "Incompatible save from earlier version ({})"\
                 .format(data["version"])
