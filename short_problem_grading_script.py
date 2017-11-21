@@ -3,7 +3,7 @@ Programmer: Ryan Sims
 Email: ryanjsims@email.arizona.edu
 Date: 8/28/2017
 """
-VERSION = 1.3
+VERSION = 1.3.1
 """
 Description: A short problem grading script for SLs of Fall '17 CSC120
 Requirements:
@@ -290,7 +290,7 @@ class ShortGrader:
             self.student_scores[student[2]]["first_name"] = student[1]
             for problem in self.problems:
                 self.student_scores[student[2]][problem[1]] =\
-                                float(problem[0]) * float(student[problem_indices[problem[1]]].strip())
+                                float(problem[0]) * float(student[problem_indices[problem[1]]].strip().replace(" ", "0"))
                 self.student_scores[student[2]][problem[1]] =\
                                 self._round(self.student_scores[student[2]][problem[1]])
 
@@ -629,7 +629,9 @@ class ShortGrader:
         data = json.loads(loaded_string)
         assert "version" in data.keys(),\
                 "Incompatible save from earlier version (unknown)" 
-        assert VERSION == data["version"],\
+        currVersion = VERSION.split(".")
+        oldVersion = data["version"].split(".")
+        assert currVersion[0] == oldVersion[0] and currVersion[1] == oldVersion[1],\
                 "Incompatible save from earlier version ({})"\
                 .format(data["version"])
         self.sl_name = data["sl_name"]
