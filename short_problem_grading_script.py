@@ -5,18 +5,19 @@ Date: 8/28/2017
 """
 VERSION = "1.3.1"
 """
-Description: A short problem grading script for SLs of Fall '17 CSC120
+Description: A short problem grading script for CSC120 SLs.
+             For use in unix-like OSes, though it can be run in Windows as well.
 Requirements:
     1. Text file listing all of your students' NetIDs and full names,
        one student per line, of the format:
-        "<NetID>\t"Lastname, Firstname"
+        <NetID>\tLastname, Firstname
        This text file needs to be in the same directory as this script,
        and it must be named "emails_and_names.txt".
     2. Assignment folders in the same directory, named "Assignment <#>"
        where <#> is replaced with the assignment number. Each Assignment <#>
        folder should have a "Short Problems" subdirectory, which contains
        your students' code folders out of the tar file, the CCscores.csv file,
-       the rubric provided by Abigail in a "rubric.txt" file, and an optional
+       the rubric provided by Ryan in a "rubric.txt" file, and an optional
        "constraints.txt" file to exclude lines you do not want printed.
     So your setup should look like:
     
