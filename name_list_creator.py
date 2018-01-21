@@ -1,7 +1,10 @@
 import re, os
 
 """
-Simple script to create emails_and_names.txt from the section lists provided on Piazza
+Simple script to create emails_and_names.txt from the section lists
+provided on Piazza. Download your section list to the same directory
+as this script and run it to create the emails and names text file
+for the short problem grading script.
 """
 
 def main():
