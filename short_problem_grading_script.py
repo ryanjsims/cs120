@@ -101,7 +101,7 @@ class ShortGrader:
     """
     def grade(self):
         self.get_assignment()
-        if(len(self.finished_students) == 0):
+        if(len(self.student_scores[sorted(self.student_scores.keys())[0]]["problems_finished"]) == 0):
             """
             We have not loaded anything, so we need to initialize
             everything.
@@ -214,7 +214,7 @@ class ShortGrader:
         csv_dir = os.getcwd() + FOLDSEP + "Assignment " +\
               str(self.assignment) + FOLDSEP + "Short Problems" + FOLDSEP
         print("Looking for csv file in " + csv_dir)
-        matches = re.findall("C*scores[a-zA-Z0-9]*\.csv", "\n".join(os.listdir(csv_dir)))
+        matches = re.findall("\bC*scores[a-zA-Z0-9]*\.csv", "\n".join(os.listdir(csv_dir)))
         csv_name = ""
         if(len(matches) == 0):
             print("CSV scores file of form C*scores[0-9]*\.csv not found.")
@@ -316,18 +316,18 @@ class ShortGrader:
         
         directory = os.getcwd() + FOLDSEP + "Assignment " +\
               str(self.assignment) + FOLDSEP + "Short Problems" + FOLDSEP
-        for netid in self.student_scores.keys():
+        for netid in sorted(list(self.student_scores.keys())):
             if netid in self.finished_students:
                 print("Skipping " + netid + ", already graded.")
                 continue
             print("\nStudent: " + netid)
 
             #Check if loaded from save
-            if not "comments" in self.student_scores[netid].keys():
+            if not "comments" in list(self.student_scores[netid].keys()):
                 self.student_scores[netid]["comments"] = {}
-            if not "total" in self.student_scores[netid].keys():
+            if not "total" in list(self.student_scores[netid].keys()):
                 self.student_scores[netid]["total"] = 0
-            if not "problems_finished" in self.student_scores[netid].keys():
+            if "problems_finished" not in list(self.student_scores[netid].keys()):
                 self.student_scores[netid]["problems_finished"] = []
             i = 0
             while i < len(self.problems):
