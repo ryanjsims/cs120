@@ -101,7 +101,7 @@ class ShortGrader:
     """
     def grade(self):
         self.get_assignment()
-        if(len(self.student_scores[sorted(self.student_scores.keys())[0]]["problems_finished"]) == 0):
+        if(len(self.student_scores.keys()) == 0 or len(self.student_scores[sorted(self.student_scores.keys())[0]]["problems_finished"]) == 0):
             """
             We have not loaded anything, so we need to initialize
             everything.
@@ -214,7 +214,7 @@ class ShortGrader:
         csv_dir = os.getcwd() + FOLDSEP + "Assignment " +\
               str(self.assignment) + FOLDSEP + "Short Problems" + FOLDSEP
         print("Looking for csv file in " + csv_dir)
-        matches = re.findall("\bC*scores[a-zA-Z0-9]*\.csv", "\n".join(os.listdir(csv_dir)))
+        matches = re.findall("C*scores[a-zA-Z0-9]*\.csv", "\n".join(os.listdir(csv_dir)))
         csv_name = ""
         if(len(matches) == 0):
             print("CSV scores file of form C*scores[0-9]*\.csv not found.")
