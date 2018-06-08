@@ -80,8 +80,10 @@ def main():
             curr_problem = problem_stack.pop()
             print_code(curr_problem, curr_student, base_scores)
             deduct_resp = check_deduct()
+            deduction = 0
             if deduct_resp == "y":
-                pass #do deduction
+                #TODO: Figure out name for score here
+                deduction = get_deduction(0, base_scores[curr_student][)
             elif deduct_resp == "u":
                 if finished_problems.is_empty() and graded.is_empty():
                     print("Nothing to undo!", file=sys.stderr)
@@ -100,5 +102,5 @@ def main():
                 save_all(rubric, sl_name, problems, emails_to_names, constraints,\
                         base_scores, final_scores, previous_comments)
                 continue
-            comments = get_comments()
-
+            comments = get_comments(previous_comments)
+            
