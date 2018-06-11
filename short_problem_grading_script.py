@@ -635,7 +635,7 @@ class ShortGrader:
         currVersion = VERSION.split(".")
         oldVersion = str(data["version"]).split(".")
         assert currVersion[0] == oldVersion[0] and currVersion[1] == oldVersion[1],\
-                "Incompatible save from earlier version ({})"\
+                "Incompatible save from version ({})"\
                 .format(data["version"])
         self.sl_name = data["sl_name"]
         self.rubric = data["rubric"]
