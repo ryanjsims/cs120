@@ -64,6 +64,7 @@ def main():
         msg.attach(part)
         email_to_send = msg.as_string()
         if not TEST_MODE:
+            print("Sent grade email to {}".format(recipient))
             session.sendmail(sender, recipient, email_to_send)
         else:
             session.sendmail(sender, sender, email_to_send)
